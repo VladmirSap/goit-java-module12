@@ -1,90 +1,100 @@
 package task2;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 public class FizzBuzz {
-    private int n;
-    private int current = 1;
-    private CyclicBarrier barrier = new CyclicBarrier(4);
+    private static final int n = 30; // Змінити на потрібне значення n
+    private static final ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(n);
+    private static final CyclicBarrier barrier = new CyclicBarrier(4);
 
-    public FizzBuzz(int n) {
-        this.n = n;
+    public static void main(String[] args) throws InterruptedException {
+        Thread threadA = new Thread(Fizz());
+        Thread threadB = new Thread(Buzz());
+        Thread threadC = new Thread(FizzBuzz());
+        Thread threadD = new Thread(Number());
+
+        threadA.start();
+        threadB.start();
+        threadC.start();
+        threadD.start();
+
+        threadA.join();
+        threadB.join();
+        threadC.join();
+        threadD.join();
     }
 
-    public void fizz() {
-        while (current <= n) {
-            if (current % 3 == 0 && current % 5 != 0) {
-                printFizz();
-            } else {
+    private static Runnable Fizz() {
+        return () -> {
+            for (int i = 1; i <= n; i++) {
+                if (i % 3 == 0 && i % 5 != 0) {
+                    try {
+                        queue.put("fizz");
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
                 awaitBarrier();
             }
-        }
+        };
     }
 
-    public void buzz() {
-        while (current <= n) {
-            if (current % 5 == 0 && current % 3 != 0) {
-                printBuzz();
-            } else {
+    private static Runnable Buzz() {
+        return () -> {
+            for (int i = 1; i <= n; i++) {
+                if (i % 5 == 0 && i % 3 != 0) {
+                    try {
+                        queue.put("buzz");
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
                 awaitBarrier();
             }
-        }
+        };
     }
 
-    public void fizzbuzz() {
-        while (current <= n) {
-            if (current % 3 == 0 && current % 5 == 0) {
-                printFizzBuzz();
-            } else {
+    private static Runnable FizzBuzz() {
+        return () -> {
+            for (int i = 1; i <= n; i++) {
+                if (i % 3 == 0 && i % 5 == 0) {
+                    try {
+                        queue.put("fizzbuzz");
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
                 awaitBarrier();
             }
-        }
+        };
     }
 
-    public void number() {
-        while (current <= n) {
-            if (current % 3 != 0 && current % 5 != 0) {
-                printNumber();
-            } else {
-                awaitBarrier();
+    private static Runnable Number() {
+        return () -> {
+            for (int i = 1; i <= n; i++) {
+                try {
+                    if (i % 3 != 0 && i % 5 != 0) {
+                        queue.put(Integer.toString(i));
+                    }
+                    awaitBarrier();
+                    System.out.println(queue.take());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
-        }
+        };
     }
 
-    private void printFizz() {
-        synchronized (this) {
-            System.out.println("fizz");
-            current++;
-        }
-    }
-
-    private void printBuzz() {
-        synchronized (this) {
-            System.out.println("buzz");
-            current++;
-        }
-    }
-
-    private void printFizzBuzz() {
-        synchronized (this) {
-            System.out.println("fizzbuzz");
-            current++;
-        }
-    }
-
-    private void printNumber() {
-        synchronized (this) {
-            System.out.println(current);
-            current++;
-        }
-    }
-
-    private void awaitBarrier() {
+    private static void awaitBarrier() {
         try {
-            barrier.await(); // Wait for other threads
+            barrier.await();
         } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
     }
 }
+
+
+
